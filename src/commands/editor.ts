@@ -9,7 +9,9 @@ import {
   window,
   workspace
 } from "vscode";
+import * as config from "../config";
 import { EXTENSION_NAME } from "../constants";
+import { output } from "../extension";
 import { GistFile, store } from "../store";
 import { newGist } from "../store/actions";
 import { ensureAuthenticated } from "../store/auth";
@@ -18,6 +20,7 @@ import {
   byteArrayToString,
   decodeDirectoryName,
   fileNameToUri,
+  getFileExtension,
   getGistDescription,
   getGistLabel,
   stringToByteArray
@@ -103,7 +106,7 @@ export function registerEditorCommands(context: ExtensionContext) {
     commands.registerCommand(
       `${EXTENSION_NAME}.addFileToGist`,
       async (
-        targetNode: GistFileNode | Uri | { notebookEditor: { notebookUri: Uri }},
+        targetNode: GistFileNode | Uri | { notebookEditor: { notebookUri: Uri } },
         multiSelectNodes?: GistFileNode[] | Uri[]
       ) => {
         await ensureAuthenticated();
@@ -129,7 +132,7 @@ export function registerEditorCommands(context: ExtensionContext) {
             });
           } else {
             const uri = node instanceof Uri ? node : node.notebookEditor.notebookUri;
-            
+
             // The command is being called as a response to
             // right-clicking a file node in the explorer
             // and/or right-clicking the editor tab
@@ -172,10 +175,38 @@ export function registerEditorCommands(context: ExtensionContext) {
         const gistItems = store.gists.map((gist) => ({
           label: getGistLabel(gist),
           description: getGistDescription(gist),
-          id: gist.id
+          id: gist.id,
+          files: Object.keys(gist.files)
         }));
 
-        const selectedGist = await window.showQuickPick(gistItems, {
+        // Get the language of the current editor
+        const detectedLanguage = editor.document.languageId;
+        output?.appendLine(
+          `Detected language: ${detectedLanguage}`,
+          output.messageType.Info
+        );
+
+        // Get corresponding allowed file extensions of gists and add '_' versions to extensions
+        const allowedExtensions = config.get("languageMappings")[detectedLanguage] || null;
+        output?.appendLine(
+          `Allowed file extensions: ${allowedExtensions}`,
+          output.messageType.Info
+        );
+        if (allowedExtensions !== null) {
+          // We add '_' versions of the allowed extensions to the list (this allows using e.g. .ipynb_ for magic commands, which will not render in the gist notebook)
+          allowedExtensions.push(...allowedExtensions.map((fileExtension) => `${fileExtension}_`));
+        }
+
+        // Filter gists by language
+        const gistItemsFiltered = gistItems.filter((gist) => {
+          if (allowedExtensions === null) {
+            return true;
+          }
+          return gist.files.some(file => allowedExtensions.includes(getFileExtension(file)));
+        })
+
+
+        const selectedGist = await window.showQuickPick(gistItemsFiltered, {
           placeHolder: "Select the Gist you'd like to paste a file from"
         });
         if (!selectedGist) {

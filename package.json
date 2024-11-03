@@ -119,6 +119,22 @@
           "default": false,
           "type": "boolean",
           "description": "Specifies whether or not to enable the output channel for tracing."
+        },
+        "gistpad.languageMappings": {
+          "type": "object",
+          "default": {
+            "python": [
+              ".py",
+              ".ipynb"
+            ]
+          },
+          "description": "Maps file extensions to language identifiers (for 'Paste Gist File' command).",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       }
     },
@@ -1531,7 +1547,7 @@
     "typescript": "^5.2.2",
     "vsce": "^2.15.0",
     "vscode-nls-dev": "^3.3.1",
-    "webpack": "^5.89.0",
+    "webpack": "^5.96.0",
     "webpack-cli": "^5.1.4"
   }
 }

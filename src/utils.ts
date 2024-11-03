@@ -392,3 +392,8 @@ export function getIconPath(context: ExtensionContext, iconName: string) {
     light: joinPath(context, `images/light/${iconName}`)
   };
 }
+
+export function getFileExtension(filename: string) {
+  // return extensions of the form ".{ext}", e.g. ".py"
+  return path.extname(filename).toLowerCase();
+}
