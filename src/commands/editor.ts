@@ -221,7 +221,13 @@ export function registerEditorCommands(context: ExtensionContext) {
         if (fileItems.length === 1) {
           selectedFile = fileItems[0];
         } else {
-          selectedFile = await window.showQuickPick(fileItems, {
+          const filteredFileItems = fileItems.filter((file) => {
+            if (allowedExtensions === null) {
+              return true;
+            }
+            return allowedExtensions.includes(getFileExtension(file));
+          });
+          selectedFile = await window.showQuickPick(filteredFileItems, {
             placeHolder: "Select the file to paste from"
           });
           if (!selectedFile) {
